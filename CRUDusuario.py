@@ -1,20 +1,9 @@
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-
-uri = "mongodb+srv://admin:admin@fatec.izfgkb8.mongodb.net/?retryWrites=true&w=majority&appName=Fatec"
-
-
-client = MongoClient(uri, server_api=ServerApi('1'))
-global db
-db = client.mercadolivre
+from connect_database import db
 
 def delete_usuario(nome, sobrenome):
-    
-    global db
-    mycol = db.usuario
-    myquery = {"nome": nome, "sobrenome":sobrenome}
-    mydoc = mycol.delete_one(myquery)
-    print("Deletado o usuário ",mydoc)
+    query = "DELETE FROM usuario WHERE nome = %s AND sobrenome = %s"
+    db.session.execute(query, (nome, sobrenome))
+    print("Deletado o usuário com nome:", nome, "e sobrenome:", sobrenome)
 
 def input_with_cancel(prompt, cancel_keyword="CANCELAR", cancel_on_n_for_specific_prompt=False):
     resposta = input(f"{prompt} (digite {cancel_keyword} para abortar): ")
@@ -38,75 +27,43 @@ def create_usuario():
         print("CPF é obrigatório.")
         return
 
-    if db.usuario.find_one({"cpf": cpf}):
+    # Verificar se já existe um usuário com o mesmo CPF
+    query = "SELECT * FROM usuario WHERE cpf = %s"
+    if db.session.execute(query, (cpf,)).one():
         print("Já existe um usuário cadastrado com este CPF.")
         return
     
     end = []
-    while True:
-        rua = input_with_cancel("Rua", cancel_on_n_for_specific_prompt=True)
-        if rua is None: break  
+    # O Cassandra não suporta listas de mapas diretamente como o MongoDB, então isso precisa ser adaptado.
+    # Pode-se serializar a lista de endereços em uma string JSON, por exemplo, ou modelar de outra forma.
 
-        num = input_with_cancel("Num", cancel_on_n_for_specific_prompt=True)
-        if num is None: break
-
-        bairro = input_with_cancel("Bairro", cancel_on_n_for_specific_prompt=True)
-        if bairro is None: break
-
-        cidade = input_with_cancel("Cidade", cancel_on_n_for_specific_prompt=True)
-        if cidade is None: break
-
-        estado = input_with_cancel("Estado", cancel_on_n_for_specific_prompt=True)
-        if estado is None: break
-
-        cep = input_with_cancel("CEP", cancel_on_n_for_specific_prompt=True)
-        if cep is None: break
-
-        endereco = {"rua": rua, "num": num, "bairro": bairro, "cidade": cidade, "estado": estado, "cep": cep}
-        end.append(endereco)
-
-        continuar = input("Deseja cadastrar um novo endereço (S/N)? ").strip().upper()
-        if continuar != 'S': break
-    
-
-    mydoc = {"nome": nome, "sobrenome": sobrenome, "cpf": cpf, "end": end}
-    x = db.usuario.insert_one(mydoc)
-    print("Usuário inserido com ID ", x.inserted_id)
-    return mydoc["cpf"] 
+    # Inserir usuário
+    query = "INSERT INTO usuario (nome, sobrenome, cpf, end) VALUES (%s, %s, %s, %s)"
+    db.session.execute(query, (nome, sobrenome, cpf, str(end)))  # end como string JSON, por exemplo
+    print("Usuário inserido com sucesso.")
 
 def read_usuario(nome):
-    
-    global db
-    mycol = db.usuario
-    print("Usuários existentes: ")
-    if not len(nome):
-        mydoc = mycol.find().sort("nome")
-        for x in mydoc:
-            print (x["nome"],x["cpf"])
+    if not nome:
+        query = "SELECT * FROM usuario"
+        for row in db.session.execute(query):
+            print(row.nome, row.cpf)
     else:
-        myquery = {"nome": nome}
-        mydoc = mycol.find(myquery)
-        for x in mydoc:
-            print(x)
+        query = "SELECT * FROM usuario WHERE nome = %s"
+        for row in db.session.execute(query, (nome,)):
+            print(row)
 
 def update_usuario(nome):
-   
-    global db
-    mycol = db.usuario
-    myquery = {"nome": nome}
-    mydoc = mycol.find_one(myquery)
-    print("Dados do usuário: ",mydoc)
-    nome = input("Mudar Nome:")
-    if len(nome):
-        mydoc["nome"] = nome
-
-    sobrenome = input("Mudar Sobrenome:")
-    if len(sobrenome):
-        mydoc["sobrenome"] = sobrenome
-
-    cpf = input("Mudar CPF:")
-    if len(cpf):
-        mydoc["cpf"] = cpf
-
-    newvalues = { "$set": mydoc }
-    mycol.update_one(myquery, newvalues)
+    # Buscar usuário
+    query = "SELECT * FROM usuario WHERE nome = %s"
+    user = db.session.execute(query, (nome,)).one()
+    if user:
+        print("Dados do usuário: ", user)
+        novo_nome = input("Mudar Nome:")
+        sobrenome = input("Mudar Sobrenome:")
+        cpf = input("Mudar CPF:")
+        # Atualizar usuário
+        query = "UPDATE usuario SET nome = %s, sobrenome = %s, cpf = %s WHERE nome = %s"
+        db.session.execute(query, (novo_nome, sobrenome, cpf, nome))
+        print("Usuário atualizado.")
+    else:
+        print("Usuário não encontrado.")
