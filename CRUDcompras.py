@@ -152,28 +152,35 @@ def ver_compras_realizadas(cpf_usuario):
 # Função para deletar uma compra
 def deletar_compra(cpf_usuario):
     collection: Collection = db.get_collection("compra")
-    compras = list(collection.find({"cpf_usuario": cpf_usuario}))  # Executa a consulta uma vez e armazena os resultados em uma lista
+    compras = list(collection.find({"cpf_usuario": cpf_usuario}))
 
-    if not compras:
+    if not compras:  # Verifica se a lista de compras está vazia
         print("Nenhuma compra encontrada para este usuário.")
-        return
+        return  # Sai da função se não houver compras
 
     print("Compras do usuário:")
-    for i, compra in enumerate(compras):
-        print(f"{i+1}. {compra}")
-
+    for i, compra in enumerate(compras, start=1):
+        print(f"{i}. {compra}")
+        
     while True:
         try:
-            index = int(input("Digite o número da compra que deseja excluir: ")) - 1
-            if 0 <= index < len(compras):  # Verifica se o índice é válido
-                compra_a_excluir = compras[index]  # Obtém a compra a excluir da lista
-                collection.delete_one(compra_a_excluir)  # Exclui a compra
-                print("Compra excluída com sucesso!")
-                return  # Sai da função após excluir
+            index_str = input("Digite o número da compra que deseja excluir: ")
+            if not index_str.isdigit():
+                raise ValueError("Entrada inválida. Digite um número.")
+            index = int(index_str) - 1
+            if index >= 0:
+                # Encontra a compra pelo índice e exclui pelo ID
+                count = 0
+                for compra in collection.find({"cpf_usuario": cpf_usuario}):
+                    if count == index:
+                        collection.delete_one({"_id": compra["_id"]}) # Filtra pelo _id da compra
+                        print("Compra excluída com sucesso!")
+                        return
+                    count += 1
             else:
                 print("Índice inválido. Tente novamente.")
-        except ValueError:
-            print("Entrada inválida. Digite um número.")
+        except ValueError as e:
+            print(f"Erro: {e}")
 
 
 
