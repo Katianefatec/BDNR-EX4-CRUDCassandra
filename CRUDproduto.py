@@ -1,167 +1,126 @@
-# from connect_database import db
+from connect_database import db
+from astrapy.collection import Collection
+from CRUDusuario import input_with_cancel
 
 
-# def delete_produto():
-#     mycol_vendedor = db.vendedor
-#     mycol_produto = db.produto
+def create_produto():
+    print("\nInserindo um novo produto")
+    nome = input_with_cancel("Nome do produto: ")
+    if nome is None: return   
 
-#     print("Vendedores disponíveis:")
-#     vendedores = list(mycol_vendedor.find())
-#     for indice, vendedor in enumerate(vendedores, start=1):
-#         print(f"{indice}: {vendedor['nome']} {vendedor.get('sobrenome', '')}")
-   
-#     escolha_vendedor = input("Escolha o vendedor pelo número (ou digite 'abortar' para cancelar): ")
-#     if escolha_vendedor.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     escolha_vendedor = int(escolha_vendedor) - 1
-#     vendedor_id = vendedores[escolha_vendedor]['_id']
-  
-#     produtos = list(mycol_produto.find({"vendedor_id": vendedor_id}))
-#     if not produtos:
-#         print("Este vendedor não possui produtos cadastrados.")
-#         return
-#     print("Produtos deste vendedor:")
-#     for indice, produto in enumerate(produtos, start=1):
-#         print(f"{indice}: {produto['nome']} - Valor: {produto['valor']}")
-
-#     escolha_produto = input("Escolha o produto pelo número para deletar (ou digite 'abortar' para cancelar): ")
-#     if escolha_produto.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     escolha_produto = int(escolha_produto) - 1
-#     produto_escolhido = produtos[escolha_produto]
-   
-#     produto_id_str = str(produto_escolhido['_id'])
-
-#     mycol_produto.delete_one({"_id": produto_escolhido['_id']})
-
-#     db.vendedor.update_one(
-#     {"_id": vendedor_id},
-#     {"$pull": {"produtos": {"_id": ObjectId(produto_id_str)}}}
-# )
-#     print(f"Deletado o produto {produto_escolhido['nome']}.")
-# def create_produto():
-#     mycol = db.produto
-#     mycol_vendedor = db.vendedor
-
-#     print("\nInserindo um novo produto")   
+    while True:
+        try:
+            preco = float(input_with_cancel("Preço: "))
+            if preco < 0:
+                raise ValueError("Preço não pode ser negativo.")
+            break
+        except ValueError as e:
+            print(f"Erro: {e}. Tente novamente.")
     
-#     nome = input("Nome: ")
-#     if nome.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     valor = input("Valor: ")
-#     if valor.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
 
-#     print("Vendedores disponíveis:")
-#     vendedores = list(mycol_vendedor.find())
-#     for indice, vendedor in enumerate(vendedores, start=1):
-#         print(f"{indice}: {vendedor['nome']} {vendedor.get('sobrenome', '')}")
+    # Inserir produto
+    collection: Collection = db.get_collection("produto")
+    collection.insert_one(document={"nome": nome,  "preco": preco})
+    print("Produto inserido com sucesso.")
 
-#     escolha = input("Escolha o vendedor pelo número (ou digite 'abortar' para cancelar): ")
-#     if escolha.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     try:
-#         escolha_numerica = int(escolha) - 1  
-#         if escolha_numerica < 0 or escolha_numerica >= len(vendedores):
-#             raise ValueError("Número fora do intervalo")
-#         vendedor_id = vendedores[escolha_numerica]['_id']
-#         nome_vendedor = vendedores[escolha_numerica]['nome']  
-#     except (ValueError, IndexError):
-#         print("Escolha inválida.")
-#         return
+def list_produtos_indexados():
+    collection: Collection = db.get_collection("produto")
+    produtos = list(collection.find())
 
-#     mydoc = {"nome": nome, "valor": valor, "vendedor_id": vendedor_id,  "nome_vendedor": nome_vendedor}
-#     x = mycol.insert_one(mydoc)
-#     print("Produto inserido com ID ", x.inserted_id)
+    if not produtos:
+        print("Nenhum produto encontrado.")
+        return None
 
-#     produto_inserido = mycol.find_one({"_id": x.inserted_id})
-    
-#     mycol_vendedor.update_one(
-#         {"_id": vendedor_id},
-#         {"$push": {"produtos": produto_inserido}},
-#         upsert=True
-#     )
-#     print("Vendedor atualizado com o novo produto.")
+    print("Produtos disponíveis:")
+    for i, produto in enumerate(produtos):
+        print(f"{i+1}. Nome: {produto['nome']}, Preço: {produto['preco']}")
 
-# def update_produto():
-#     mycol = db.produto
-#     mycol_vendedor = db.vendedor
-    
-#     print("Vendedores disponíveis:")
-#     vendedores = list(mycol_vendedor.find())
-#     for indice, vendedor in enumerate(vendedores, start=1):
-#         print(f"{indice}: {vendedor['nome']} {vendedor.get('sobrenome', '')}")
+    while True:
+        try:
+            index = int(input("Digite o número do produto que deseja: ")) - 1
+            if 0 <= index < len(produtos):
+                return produtos[index]['nome']  
+            else:
+                print("Índice inválido. Tente novamente.")
+        except ValueError:
+            print("Entrada inválida. Digite um número.")
 
-#     escolha_vendedor = input("Escolha o vendedor pelo número (ou digite 'abortar' para cancelar): ")
-#     if escolha_vendedor.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     escolha_vendedor = int(escolha_vendedor) - 1
-#     vendedor_id = vendedores[escolha_vendedor]['_id']
-   
-#     produtos = list(mycol.find({"vendedor_id": vendedor_id}))
-#     print("Produtos deste vendedor:")
-#     for indice, produto in enumerate(produtos, start=1):
-#         print(f"{indice}: {produto['nome']} - Valor: {produto['valor']}")
-    
-#     escolha_produto = input("Escolha o produto pelo número (ou digite 'abortar' para cancelar): ")
-#     if escolha_produto.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     escolha_produto = int(escolha_produto) - 1
-#     produto_escolhido = produtos[escolha_produto]
-    
-#     novo_nome = input("Novo nome (deixe em branco para não alterar ou digite 'abortar' para cancelar): ")
-#     if novo_nome.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     novo_valor = input("Novo valor (deixe em branco para não alterar ou digite 'abortar' para cancelar): ")
-#     if novo_valor.lower() == 'abortar':
-#         print("Operação cancelada.")
-#         return
-#     update_fields = {}
-#     if novo_nome:
-#         update_fields["nome"] = novo_nome
-#     if novo_valor:
-#         update_fields["valor"] = novo_valor
+def update_produto():
+    nome_produto = list_produtos_indexados()  
+    if nome_produto is None:
+        return  
 
-#     if update_fields:
-#         mycol.update_one({"_id": produto_escolhido['_id']}, {"$set": update_fields})
-               
-#         produto_atualizado = mycol.find_one({"_id": produto_escolhido['_id']})
-               
-#         db.vendedor.update_one(
-#             {"_id": vendedor_id, "produtos._id": produto_escolhido['_id']},
-#             {"$set": {"produtos.$": produto_atualizado}}
-#         )
-#         print("Produto atualizado com sucesso.")
-#     else:
-#         print("Nenhuma atualização realizada.")
+    # Buscar produto pelo nome
+    collection: Collection = db.get_collection("produto")
+    existing_produto = collection.find_one({"nome": nome_produto})
 
-# def read_produto(nome):
-#     global db
-#     mycol = db.produto
-#     mycol_vendedor = db.vendedor  
+    if existing_produto:
+        print("Dados atuais do produto:", existing_produto)
 
-#     print("Produtos existentes: ")
-#     if not len(nome):
-#         mydoc = mycol.find().sort("nome")
-#     else:
-#         myquery = {"nome": nome}
-#         mydoc = mycol.find(myquery)
-
-#     for produto in mydoc:
-        
-#         vendedor_id = produto.get("vendedor_id")
-#         vendedor = mycol_vendedor.find_one({"_id": vendedor_id})
-#         nome_vendedor = vendedor["nome"] if vendedor else "Vendedor não encontrado"
+        # Obter novos valores para os campos (com opção de manter os atuais)
+        nome = input_with_cancel(f"Novo nome (ou pressione Enter para manter '{existing_produto['nome']}' ): ") or existing_produto['nome']
         
         
-#         print(f"Nome: {produto['nome']}, Valor: {produto['valor']}, Vendedor: {nome_vendedor}")
-    
+        while True:
+            try:
+                preco = float(input_with_cancel(f"Novo preço (ou pressione Enter para manter '{existing_produto['preco']}' ): "))
+                if preco is not None and preco < 0:
+                    raise ValueError("Preço não pode ser negativo.")
+                break
+            except ValueError as e:
+                print(f"Erro: {e}. Tente novamente.")
+        preco = preco if preco is not None else existing_produto['preco']
+       
+
+        # Atualizar o produto no banco de dados
+        collection.update_one(
+            {"nome": nome_produto},  # Filtro para encontrar o produto pelo nome
+            {
+                "$set": {
+                    "nome": nome,                     
+                    "preco": preco                    
+                }
+            }
+        )
+        print("Produto atualizado com sucesso!")
+    else:
+        print("Produto não encontrado.")
+
+def read_produto(nome=None):
+    collection: Collection = db.get_collection("produto")
+
+    if nome:
+        # Buscar produto específico pelo nome
+        produto = collection.find_one({"nome": nome})
+        if produto:
+            print("\nDetalhes do Produto:")
+            for chave, valor in produto.items():
+                print(f"{chave}: {valor}")
+        else:
+            print("Produto não encontrado.")
+    else:
+        # Listar todos os produtos com índice
+        produtos = list(collection.find())
+
+        if not produtos:
+            print("Nenhum produto encontrado.")
+            return
+
+        print("Produtos disponíveis:")
+        for i, produto in enumerate(produtos):
+            print(f"{i+1}. Nome: {produto['nome']}")
+
+        while True:
+            try:
+                index = int(input("Digite o número do produto para ver detalhes: ")) - 1
+                if 0 <= index < len(produtos):
+                    produto_selecionado = produtos[index]
+                    print("\nDetalhes do Produto:")
+                    for chave, valor in produto_selecionado.items():
+                        print(f"{chave}: {valor}")
+                    break  # Sair do loop após exibir os detalhes
+                else:
+                    print("Índice inválido. Tente novamente.")
+            except ValueError:
+                print("Entrada inválida. Digite um número.")
 

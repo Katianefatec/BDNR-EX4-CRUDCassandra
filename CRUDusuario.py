@@ -55,6 +55,7 @@ def create_usuario():
     
     collection.insert_one(document={"nome": nome, "sobrenome": sobrenome, "cpf": cpf, "end": end})  
     print("Usuário inserido com sucesso.")
+    return cpf
 
 def list_usuarios_indexados():
     collection: Collection = db.get_collection("usuario")
@@ -64,7 +65,7 @@ def list_usuarios_indexados():
         print("Nenhum usuário encontrado.")
         return None
 
-    print("Usuários indexados:")
+    print("Usuários cadastrados:")
     for i, user in enumerate(users):
         print(f"{i+1}. CPF: {user['cpf']}, Nome: {user['nome']}")
 

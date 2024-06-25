@@ -26,9 +26,7 @@ while (key != 'S'):
         elif (sub == '2'):
             nome = input("Listar usuários, deseja algum nome especifico? ")
             CRUDusuario.read_usuario(nome)
-        
-        elif (sub == '3'):            
-            CRUDusuario.update_usuario()    
+               
             
     elif (key == '2'):
         print("Menu do Vendedor")     
@@ -47,20 +45,18 @@ while (key != 'S'):
         print("Menu do Produto")  
         print("1-Criar Produto")
         print("2-Listar Produto")    
+        print("3-Atualizar Produto")
         sub = input("Digite a opção desejada? (V para voltar) ")
         if (sub == '1'):
             print("Criar produto")
             CRUDproduto.create_produto()
             
-        elif (sub == '2'):
-            nome = input("Listar produto, deseja algum produto especifico? ")
-            CRUDproduto.read_produto(nome)
+        elif (sub == '2'):           
+            CRUDproduto.read_produto()
         
         elif (sub == '3'):            
             CRUDproduto.update_produto()
-
-        elif (sub == '4'):                             
-            CRUDproduto.delete_produto()     
+          
 
     elif key == '4':
         print("Compras") 
