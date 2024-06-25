@@ -1,135 +1,133 @@
-# from connect_database import db
+from connect_database import db
+from astrapy.collection import Collection
+from CRUDusuario import input_with_cancel
 
-# def delete_vendedor(nome):
-#     global db   
-#     myquery = {"nome": nome}
-#     result = mycol.delete_one(myquery)
-#     if result.deleted_count > 0:
-#         print(f"Vendedor '{nome}' deletado com sucesso.")
-#     else:
-#         print(f"Nenhum vendedor encontrado com o nome '{nome}' para deletar.")
+def create_vendedor():
+    print("\nInserindo um novo vendedor")
+    nome = input_with_cancel("Nome")
+    if nome is None: return
 
-
-# def input_with_cancel(prompt, cancel_keyword="CANCELAR"):
-#     resposta = input(f"{prompt} (digite {cancel_keyword} para abortar): ")
-#     if resposta.upper() == cancel_keyword:
-#         print("Criação de vendedor cancelada.")
-#         return None
-#     return resposta
-
-# def create_vendedor():
-#     print("\nInserindo um novo vendedor")
-#     nome = input_with_cancel("Nome")
-#     if nome is None: return
-
-#     sobrenome = input_with_cancel("Sobrenome")
-#     if sobrenome is None: return
+    sobrenome = input_with_cancel("Sobrenome")
+    if sobrenome is None: return
     
-#     cpf = input_with_cancel("CPF")
-#     if cpf is None or cpf.strip() == "":  
-#         print("CPF é obrigatório.")
-#         return        
-    
-#     if mycol.find_one({"cpf": cpf}):
-#         print("Já existe um vendedor cadastrado com este CPF.")
-#         return
-    
-#     cnpj = input_with_cancel("CNPJ")
-#     if cnpj is None: return
-    
-#     if mycol.find_one({"cnpj": cnpj}):
-#         print("Já existe um vendedor cadastrado com este CNPJ.")
-#         return
-            
-#     end = []
-#     while True:
-#         rua = input_with_cancel("Rua")
-#         if rua is None: break  
+    cpf = input_with_cancel("CPF")
+    if cpf is None or cpf.strip() == "":
+        print("CPF é obrigatório.")
+        return
 
-#         num = input_with_cancel("Num")
-#         if num is None: break
+    # Verificar se já existe um vendedor com o mesmo CPF
+    collection: Collection = db.get_collection("vendedor")
+    existing_vendedor = collection.find_one({"cpf": cpf})
+    if existing_vendedor:
+        print("Já existe um vendedor cadastrado com este CPF.")
+        return
 
-#         bairro = input_with_cancel("Bairro")
-#         if bairro is None: break
+    cnpj = input_with_cancel("CNPJ")
+    if cnpj is None: return
 
-#         cidade = input_with_cancel("Cidade")
-#         if cidade is None: break
+    # Verificar se já existe um vendedor com o mesmo CNPJ
+    existing_vendedor = collection.find_one({"cnpj": cnpj})
+    if existing_vendedor:
+        print("Já existe um vendedor cadastrado com este CNPJ.")
+        return
 
-#         estado = input_with_cancel("Estado")
-#         if estado is None: break
+    # Lista para armazenar os endereços
+    enderecos = []
+    while True:
+        print("\nEndereço:")
+        rua = input("Rua: ")
+        num = input("Num: ")
+        bairro = input("Bairro: ")
+        cidade = input("Cidade: ")
+        estado = input("Estado: ")
+        cep = input("CEP: ")
 
-#         cep = input_with_cancel("CEP")
-#         if cep is None: break
+        enderecos.append({
+            "rua": rua,
+            "num": num,
+            "bairro": bairro,
+            "cidade": cidade,
+            "estado": estado,
+            "cep": cep
+        })
 
-#         endereco = {"rua": rua, "num": num, "bairro": bairro, "cidade": cidade, "estado": estado, "cep": cep}
-#         end.append(endereco)
+        adicionar_outro = input_with_cancel("Deseja cadastrar um novo endereço (S/N)? ", cancel_on_n_for_specific_prompt=True)
+        if adicionar_outro is None:
+            return  # Cancela a criação do vendedor
+        elif adicionar_outro.upper() != 'S':
+            break
 
-#         continuar = input("Deseja cadastrar um novo endereço (S/N)? ").strip().upper()
-#         if continuar != 'S': break
-    
+    collection.insert_one(document={"nome": nome, "sobrenome": sobrenome, "cpf": cpf, "cnpj": cnpj, "end": enderecos})
+    print("Vendedor inserido com sucesso.")
+    return cpf
 
-#     mydoc = {"nome": nome, "sobrenome": sobrenome, "cnpj": cnpj, "cpf": cpf, "end": end}
-#     x = mycol.insert_one(mydoc)
-#     print("Vendedor inserido com ID ", x.inserted_id)
-#     return mydoc["cpf"]
+def list_vendedores_indexados():
+    collection: Collection = db.get_collection("vendedor")
+    vendedores = list(collection.find())
 
-# def read_vendedor(nome):
-#     global db
-#     mycol = db.vendedor
-#     print("Vendedores existentes: ")
-#     if not len(nome):
-#         mydoc = mycol.find().sort("nome")
-#         for x in mydoc:            
-#             produtos = x.get("produtos", "Nenhum produto cadastrado")
-#             print(x["nome"], x.get("cnpj", "CNPJ não cadastrado"), produtos)
-#     else:
-#         myquery = {"nome": nome}
-#         mydoc = mycol.find(myquery)
-#         for x in mydoc:
-#             produtos = x.get("produtos", "Nenhum produto cadastrado")
-#             print(x["nome"], x.get("cnpj", "CNPJ não cadastrado"), produtos)
+    if not vendedores:
+        print("Nenhum vendedor encontrado.")
+        return None
 
-# def update_vendedor():
-#     global db
-#     mycol = db.vendedor
-    
-#     print("\nLista de vendedores:")
-#     vendedores = list(mycol.find().sort("nome"))
-#     for index, vendedor in enumerate(vendedores):
-#         print(f"{index + 1}. {vendedor['nome']} - {vendedor.get('cnpj', 'CNPJ não cadastrado')}")
+    print("Vendedores cadastrados:")
+    for i, vendedor in enumerate(vendedores):
+        print(f"{i+1}. CPF: {vendedor['cpf']}, Nome: {vendedor['nome']}")
 
-#     escolha = input("Escolha o número do vendedor que deseja atualizar: ")
-#     try:
-#         escolha = int(escolha) - 1
-#         if escolha < 0 or escolha >= len(vendedores):
-#             raise ValueError
-#     except ValueError:
-#         print("Escolha inválida.")
-#         return
+    while True:
+        try:
+            index = int(input("Digite o número do vendedor que deseja atualizar: ")) - 1
+            if 0 <= index < len(vendedores):
+                return vendedores[index]['cpf']
+            else:
+                print("Índice inválido. Tente novamente.")
+        except ValueError:
+            print("Entrada inválida. Digite um número.")
 
-#     vendedor_escolhido = vendedores[escolha]
-#     print("Dados do vendedor escolhido: ", vendedor_escolhido)
+def update_vendedor():
+    cpf = list_vendedores_indexados()
+    if cpf is None:
+        return
 
-#     novo_nome = input("Mudar Nome (deixe em branco para manter): ")
-#     if novo_nome:
-#         vendedor_escolhido["nome"] = novo_nome
+    collection: Collection = db.get_collection("vendedor")
+    vendedor = collection.find_one({"cpf": cpf})
 
-#     novo_sobrenome = input("Mudar Sobrenome (deixe em branco para manter): ")
-#     if novo_sobrenome:
-#         vendedor_escolhido["sobrenome"] = novo_sobrenome
+    if vendedor:
+        print("Dados atuais do vendedor:", vendedor)
 
-#     novo_cnpj = input("Mudar CNPJ (deixe em branco para manter): ")
-#     if novo_cnpj:
-#         vendedor_escolhido["cnpj"] = novo_cnpj
+        nome = input_with_cancel(f"Novo nome (ou pressione Enter para manter '{vendedor['nome']}' ): ") or vendedor['nome']
+        sobrenome = input_with_cancel(f"Novo sobrenome (ou pressione Enter para manter '{vendedor['sobrenome']}' ): ") or vendedor['sobrenome']
+        cnpj = input_with_cancel(f"Novo CNPJ (ou pressione Enter para manter '{vendedor['cnpj']}' ): ") or vendedor['cnpj']
 
-#     novo_cpf = input("Mudar CPF (deixe em branco para manter): ")
-#     if novo_cpf:
-#         if mycol.find_one({"cpf": novo_cpf, "_id": {"$ne": vendedor_escolhido["_id"]}}):
-#             print("Já existe um vendedor cadastrado com este CPF.")
-#             return
-#         else:
-#             vendedor_escolhido["cpf"] = novo_cpf
+        # ... (lógica para atualizar endereços, semelhante à função update_usuario)
 
-#     newvalues = {"$set": vendedor_escolhido}
-#     mycol.update_one({"_id": vendedor_escolhido["_id"]}, newvalues)
-#     print("Vendedor atualizado com sucesso.")
+        collection.update_one(
+            {"cpf": cpf},
+            {
+                "$set": {
+                    "nome": nome,
+                    "sobrenome": sobrenome,
+                    "cnpj": cnpj,
+                    # ... (atualização dos endereços)
+                }
+            }
+        )
+        print("Vendedor atualizado com sucesso!")
+    else:
+        print("Vendedor não encontrado.")
+
+def read_vendedor(cpf=None):
+    collection: Collection = db.get_collection("vendedor")
+
+    if cpf:
+        # Buscar vendedor específico pelo CPF
+        query = {"cpf": cpf}
+        vendedor = collection.find_one(query)
+        if vendedor:
+            print(vendedor)
+        else:
+            print("Vendedor não encontrado.")
+    else:
+        # Listar todos os vendedores
+        vendedores = collection.find()
+        for vendedor in vendedores:
+            print(vendedor)

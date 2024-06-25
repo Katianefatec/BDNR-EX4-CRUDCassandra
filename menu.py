@@ -4,41 +4,44 @@ import CRUDproduto
 import CRUDcompras
 import CRUDfavoritos
 
-key = 0
-sub = 0
-while (key != 'S'):
+while True:  # Loop principal do menu
     print("1-Usuário")
     print("2-Vendedor")
     print("3- Produto")
-    print("4- Compras")    
+    print("4- Compras")
     key = input("Digite a opção desejada? (S para sair) ").upper()
 
-    if (key == '1'):
-        print("Menu do Usuário")
-        print("1-Criar Usuário")
-        print("2-Listar Usuário")
-        print("3-Atualizar Usuário")
-        sub = input("Digite a opção desejada? (V para voltar) ")
-        if (sub == '1'):
-            print("Criar usuario")
-            CRUDusuario.create_usuario()
-            
-        elif (sub == '2'):
-            nome = input("Listar usuários, deseja algum nome especifico? ")
-            CRUDusuario.read_usuario(nome)
-               
-            
-    elif (key == '2'):
-        print("Menu do Vendedor")     
-        print("1-Criar Vendedor")
-        print("2-Listar Vendedor")    
-        if (sub == '1'):
-            print("Criar vendedor")
-            CRUDvendedor.create_vendedor()
-            
-        elif (sub == '2'):
-            nome = input("Listar vendedores, deseja algum nome especifico? ")
-            CRUDvendedor.read_vendedor(nome)
+    if key == '1':
+        sub = 0  # Reinicia a variável sub para o submenu de usuário
+        while sub != 'V':  # Loop do submenu de usuário
+            print("Menu do Usuário")
+            print("1-Criar Usuário")
+            print("2-Listar Usuário")
+            print("3-Atualizar Usuário")
+            sub = input("Digite a opção desejada? (V para voltar) ").upper()
+            if sub == '1':
+                CRUDusuario.create_usuario()
+            elif sub == '2':
+                nome = input("Listar usuários, deseja algum nome especifico? ")
+                CRUDusuario.read_usuario(nome)
+            elif sub == '3':
+                CRUDusuario.update_usuario()
+
+    elif key == '2':
+        sub = 0  # Reinicia a variável sub para o submenu de vendedor
+        while sub != 'V':  # Loop do submenu de vendedor
+            print("Menu do Vendedor")
+            print("1-Criar Vendedor")
+            print("2-Listar Vendedor")
+            print("3-Atualizar Vendedor")  # Opção adicionada para atualizar vendedor
+            sub = input("Digite a opção desejada? (V para voltar) ").upper()
+            if sub == '1':
+                CRUDvendedor.create_vendedor()
+            elif sub == '2':
+                cpf = input("Listar vendedores, deseja algum cpf especifico? ")
+                CRUDvendedor.read_vendedor(cpf)
+            elif sub == '3':  # Nova opção para atualizar vendedor
+                CRUDvendedor.update_vendedor()
         
     
     elif (key == '3'):
@@ -78,6 +81,9 @@ while (key != 'S'):
             CRUDcompras.deletar_compra(cpf_usuario)
         else:
             print("Opção inválida. Por favor, digite uma opção válida.") 
+    
+    elif key == 'S':
+        break  
         
 
 print("Obrigada!")
