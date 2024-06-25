@@ -27,9 +27,8 @@ while (key != 'S'):
             nome = input("Listar usuários, deseja algum nome especifico? ")
             CRUDusuario.read_usuario(nome)
         
-        elif (sub == '3'):
-            nome = input("Digite o usuário a ser atualizado: ")
-            CRUDusuario.update_usuario(nome)    
+        elif (sub == '3'):            
+            CRUDusuario.update_usuario()    
             
     elif (key == '2'):
         print("Menu do Vendedor")     
