@@ -13,47 +13,54 @@ def input_with_cancel(prompt, cancel_keyword="CANCELAR", cancel_on_n_for_specifi
 def create_usuario():
     print("\nInserindo um novo usuário")
     nome = input_with_cancel("Nome")
-    if nome is None: return
+    if nome is None:
+        return
 
     sobrenome = input_with_cancel("Sobrenome")
-    if sobrenome is None: return
-    
+    if sobrenome is None:
+        return
+
     cpf = input_with_cancel("CPF")
-    if cpf is None or cpf.strip() == "":  
+    if cpf is None or cpf.strip() == "":
         print("CPF é obrigatório.")
         return
-    
-    end = []
 
-    print("Endereço:")
-    rua = input("Rua: ")
-    num = input("Num: ")
-    bairro = input("Bairro: ")
-    cidade = input("Cidade: ")
-    estado = input("Estado: ")
-    cep = input("CEP: ")
+    # Lista para armazenar os endereços
+    enderecos = []
 
-    end = {
-        "rua": rua,
-        "num": num,
-        "bairro": bairro,
-        "cidade": cidade,
-        "estado": estado,
-        "cep": cep
-    }  
+    while True:
+        print("\nEndereço:")
+        rua = input("Rua: ")
+        num = input("Num: ")
+        bairro = input("Bairro: ")
+        cidade = input("Cidade: ")
+        estado = input("Estado: ")
+        cep = input("CEP: ")
 
-    
-    print(f"\n{nome} {sobrenome} - {cpf} - {end}")
+        enderecos.append({  # Adiciona o endereço à lista
+            "rua": rua,
+            "num": num,
+            "bairro": bairro,
+            "cidade": cidade,
+            "estado": estado,
+            "cep": cep
+        })
 
-    collection: Collection = db.get_collection("usuario")  
-    existing_user = collection.find_one({"cpf": cpf})  # Use find_one para buscar por CPF
+        adicionar_outro = input_with_cancel("Deseja adicionar outro endereço? (S/N): ", cancel_on_n_for_specific_prompt=True)
+        if adicionar_outro is None:
+            return  # Cancela a criação do usuário
+        elif adicionar_outro.upper() != 'S':
+            break  # Sai do loop de endereços
+
+    print(f"\n{nome} {sobrenome} - {cpf} - {enderecos}")  # Imprime os endereços como lista
+
+    collection: Collection = db.get_collection("usuario")
+    existing_user = collection.find_one({"cpf": cpf})
     if existing_user:
         print("Já existe um usuário cadastrado com este CPF.")
         return
 
-    
-    
-    collection.insert_one(document={"nome": nome, "sobrenome": sobrenome, "cpf": cpf, "end": end})  
+    collection.insert_one(document={"nome": nome, "sobrenome": sobrenome, "cpf": cpf, "end": enderecos})
     print("Usuário inserido com sucesso.")
     return cpf
 

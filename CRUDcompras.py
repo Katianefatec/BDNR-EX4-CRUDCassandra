@@ -21,9 +21,15 @@ def cadastrar_endereco(cpf_usuario):
         "cep": cep
     }
 
-    # Atualizar endereços do usuário (Cassandra)
+   
     collection: Collection = db.get_collection("usuario")
-    collection.update_one({"cpf": cpf_usuario}, {"$push": {"end": novo_endereco}})
+    collection.update_one(
+        {"cpf": cpf_usuario}, 
+        {
+            "$set": {"end": []},  # Cria o array 'end' se não existir
+            "$push": {"end": novo_endereco}  # Adiciona o novo endereço
+        }
+    )
 
     print("Endereço cadastrado com sucesso.")
     return novo_endereco
@@ -91,13 +97,13 @@ def realizar_compra(cpf_usuario):
             endereco_entrega = cadastrar_endereco(cpf_usuario)
             enderecos = [endereco_entrega]
         else:
-            print("Não é possível continuar com a compra semum endereço de entrega.")
+            print("Não é possível continuar com a compra sem um endereço de entrega.")
             return
 
     print("\nSelecione o endereço de entrega:")
     for i, endereco in enumerate(enderecos, start=1):
-        print(f"{i} - {endereco['rua']}, {endereco['num']}, {endereco['bairro']}, {endereco['cidade']}, {endereco['estado']}, CEP: {endereco['cep']}")
-
+        print(f"{i} - {enderecos[i-1]['rua']}, {enderecos[i-1]['num']}, {enderecos[i-1]['bairro']}, {enderecos[i-1]['cidade']}, {enderecos[i-1]['estado']}, CEP: {enderecos[i-1]['cep']}")  
+    
     while True:
         endereco_selecionado = input("Digite o número do endereço selecionado (ou 'N' para cadastrar um novo): ")
         if endereco_selecionado.upper() == 'N':
@@ -146,7 +152,7 @@ def ver_compras_realizadas(cpf_usuario):
 # Função para deletar uma compra
 def deletar_compra(cpf_usuario):
     collection: Collection = db.get_collection("compra")
-    compras = list(collection.find({"cpf_usuario": cpf_usuario}))
+    compras = list(collection.find({"cpf_usuario": cpf_usuario}))  # Executa a consulta uma vez e armazena os resultados em uma lista
 
     if not compras:
         print("Nenhuma compra encontrada para este usuário.")
@@ -159,12 +165,15 @@ def deletar_compra(cpf_usuario):
     while True:
         try:
             index = int(input("Digite o número da compra que deseja excluir: ")) - 1
-            if 0 <= index < len(compras):
-                compra_a_excluir = compras[index]
-                collection.delete_one(compra_a_excluir)
+            if 0 <= index < len(compras):  # Verifica se o índice é válido
+                compra_a_excluir = compras[index]  # Obtém a compra a excluir da lista
+                collection.delete_one(compra_a_excluir)  # Exclui a compra
                 print("Compra excluída com sucesso!")
-                break
+                return  # Sai da função após excluir
             else:
                 print("Índice inválido. Tente novamente.")
         except ValueError:
             print("Entrada inválida. Digite um número.")
+
+
+
